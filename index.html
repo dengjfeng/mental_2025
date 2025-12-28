@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>2025 精神状态确诊中心</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Serif+SC:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Space Mono', monospace; background-color: #0f172a; color: #e2e8f0; }
+        .font-serif-sc { font-family: 'Noto Serif SC', serif; }
+        
+        /* 霓虹光晕 */
+        .neon-text {
+            text-shadow: 0 0 5px #38bdf8, 0 0 10px #38bdf8, 0 0 20px #0ea5e9;
+        }
+
+        /* 病历本背景 */
+        .lined-paper {
+            background-image: repeating-linear-gradient(transparent, transparent 31px, #334155 31px, #334155 32px);
+            line-height: 32px;
+            padding-top: 8px; /* Align text to lines */
+            resize: none;
+        }
+
+        /* 呼吸流光按钮 */
+        .btn-shine {
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-shine::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.3), transparent);
+            transform: skewX(-25deg);
+            animation: shine 3s infinite;
+        }
+        @keyframes shine {
+            0% { left: -100%; }
+            20% { left: 200%; }
+            100% { left: 200%; }
+        }
+
+        /* 撕纸效果 */
+        .receipt-card {
+            background: #fff;
+            position: relative;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+        }
+        .receipt-card::after {
+            content: "";
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 100%;
+            height: 16px;
+            background: radial-gradient(circle, transparent 50%, #fff 52%);
+            background-size: 16px 16px;
+            background-position: center bottom;
+            transform: rotate(180deg);
+        }
+
+        /* 红色印章 */
+        .stamp-box {
+            border: 3px solid #ef4444;
+            color: #ef4444;
+            padding: 4px 8px;
+            display: inline-block;
+            transform: rotate(-12deg);
+            font-family: 'Space Mono', sans-serif;
+            font-weight: 900;
+            opacity: 0.8;
+            mask-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="1.5" result="noise" /><feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.6 -0.1" in="noise" result="alpha" /><feComposite operator="in" in="SourceGraphic" in2="alpha" /></filter><rect width="100" height="100" fill="black" filter="url(%23noise)" /></svg>'); 
+            border-radius: 4px;
+        }
+
+        .hidden { display: none; }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* 打字机光标 */
+        .cursor-blink::after {
+            content: '|';
+            animation: blink 1s step-end infinite;
+        }
+        @keyframes blink { 50% { opacity: 0; } }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 bg-[url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center bg-no-repeat bg-blend-multiply">
+    
+    <div class="max-w-md w-full relative">
+        
+        <!-- Header Title -->
+        <div class="text-center mb-6 relative group cursor-default">
+            <h1 class="text-3xl font-bold text-sky-400 tracking-tight neon-text">赛博精神治疗科</h1>
+        </div>
+
+        <!-- Input Section -->
+        <div id="input-section" class="bg-slate-900/80 backdrop-blur-xl p-6 rounded-xl border border-slate-700/50 shadow-2xl transition-all duration-300 relative overflow-hidden">
+            <!-- Top Decor -->
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-sky-500/50 to-transparent"></div>
+
+            <div class="flex justify-between items-center mb-3">
+                <label class="block text-sm font-bold text-slate-300 flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 bg-sky-500 rounded-full animate-pulse"></span>
+                    患者主诉
+                </label>
+                <!-- Dice Button -->
+                <button onclick="randomFill()" class="text-xs text-sky-400 hover:text-white flex items-center gap-1 transition-colors px-2 py-1 rounded hover:bg-slate-800">
+                    <span class="text-lg">🎲</span> 
+                    <span>帮我写</span>
+                </button>
+            </div>
+
+            <div class="relative">
+                <textarea id="user-input" maxlength="100" oninput="updateCount()" class="lined-paper w-full bg-slate-800/50 border border-slate-600 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-sky-500 focus:bg-slate-800 h-32 transition-colors placeholder-slate-500/50" placeholder="点击右上角骰子，或直接输入..."></textarea>
+                <!-- Word Count -->
+                <div class="absolute bottom-2 right-3 text-[10px] text-slate-500 font-mono">
+                    <span id="char-count">0</span>/100
+                </div>
+            </div>
+
+            <!-- Quick Tags -->
+            <div class="flex flex-wrap gap-2 mt-4 mb-2">
+                <button onclick="addTag('👊 拒绝内卷')" class="text-[10px] bg-slate-800 hover:bg-sky-900/50 text-slate-300 hover:text-sky-300 border border-slate-700 hover:border-sky-700 px-2 py-1 rounded-full transition-all">👊 拒绝内卷</button>
+                <button onclick="addTag('💸 一心搞钱')" class="text-[10px] bg-slate-800 hover:bg-emerald-900/50 text-slate-300 hover:text-emerald-300 border border-slate-700 hover:border-emerald-700 px-2 py-1 rounded-full transition-all">💸 一心搞钱</button>
+                <button onclick="addTag('🐟 只想摸鱼')" class="text-[10px] bg-slate-800 hover:bg-blue-900/50 text-slate-300 hover:text-blue-300 border border-slate-700 hover:border-blue-700 px-2 py-1 rounded-full transition-all">🐟 只想摸鱼</button>
+                <button onclick="addTag('🫠 活着就好')" class="text-[10px] bg-slate-800 hover:bg-rose-900/50 text-slate-300 hover:text-rose-300 border border-slate-700 hover:border-rose-700 px-2 py-1 rounded-full transition-all">🫠 活着就好</button>
+            </div>
+            
+            <button onclick="diagnose()" class="btn-shine w-full mt-5 bg-sky-600 hover:bg-sky-500 text-white font-bold py-3.5 rounded-lg transition-all flex justify-center items-center gap-2 group shadow-[0_0_15px_rgba(14,165,233,0.3)]">
+                <span>⚡ 提交挂号</span>
+            </button>
+        </div>
+
+        <!-- Scanning Animation -->
+        <div id="scanning" class="hidden text-center py-10 bg-slate-900/50 rounded-xl backdrop-blur">
+            <div class="w-3/4 mx-auto h-1 bg-slate-700 mb-4 overflow-hidden rounded">
+                <div class="h-full bg-sky-500 animate-[width_1.5s_ease-in-out_infinite]" style="width: 50%"></div>
+            </div>
+            <p class="text-sky-400 text-sm animate-pulse font-mono tracking-widest">SYSTEM PROCESSING...</p>
+        </div>
+
+        <!-- Result Section (Receipt Style) -->
+        <div id="result-section" class="hidden fade-in relative mb-16">
+            <div class="receipt-card text-slate-900 px-4 pt-4 pb-1 rounded-sm shadow-lg border-t-4 border-sky-500 relative">
+                
+                <!-- Receipt Header with Stamp -->
+                <div class="flex justify-between items-start border-b-2 border-dashed border-slate-300 pb-2 mb-2 relative">
+                    <div>
+                        <h2 class="text-xl font-black uppercase tracking-tight">确诊单</h2>
+                        <p id="receipt-id" class="text-[10px] text-slate-500 font-mono mt-0.5 tracking-wider">NO.2025-XIAOMI-0000</p>
+                    </div>
+                    <!-- Stamp -->
+                    <div class="stamp-box absolute right-0 top-0 text-sm py-0.5 px-2 border-2">
+                        已核销
+                    </div>
+                </div>
+
+                <!-- Diagnosis Content -->
+                <div class="space-y-2">
+                    <!-- Term -->
+                    <div>
+                        <div class="flex items-center gap-2 mb-0.5">
+                            <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">诊断</p>
+                            <div id="result-tags" class="flex gap-1">
+                                <!-- Tags injected here -->
+                            </div>
+                        </div>
+                        <h3 id="result-term" class="text-3xl font-black text-slate-900 leading-none font-serif-sc mb-1">加载中...</h3>
+                    </div>
+                    
+                    <!-- Description -->
+                    <div>
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-0.5">症状</p>
+                        <p id="result-desc" class="text-xs font-medium leading-relaxed text-slate-800 text-justify">
+                            加载中...
+                        </p>
+                    </div>
+
+                    <!-- Advice -->
+                    <div class="bg-slate-50 pl-2 py-1.5 pr-1 border-l-[3px] border-sky-600 mt-1">
+                        <p class="text-[9px] text-sky-600 uppercase font-black tracking-widest mb-0.5">处方</p>
+                        <p id="result-advice" class="text-xs italic text-slate-600 font-serif-sc">“生活是属于你自己的热词。”</p>
+                    </div>
+
+                    <!-- Deep Analysis Section (AI API) -->
+                    <div id="ai-analysis-section" class="mt-2 pt-2 border-t border-dashed border-slate-300">
+                        <p class="text-[9px] text-slate-400 uppercase font-bold tracking-widest mb-1 flex items-center gap-1">
+                            <span>🔮 AI 深度分析</span>
+                            <span id="ai-loading" class="hidden animate-spin">⟳</span>
+                        </p>
+                        <div id="ai-content" class="text-xs text-slate-700 font-serif-sc leading-relaxed min-h-[60px] bg-slate-50/50 p-2 rounded border border-slate-100 whitespace-pre-wrap">
+                            <!-- Stream content here -->
+                            <span class="text-slate-400 italic">点击下方按钮解锁深度解读...</span>
+                        </div>
+                    </div>
+
+                    <!-- Actions Area (Embedded) -->
+                     <div class="pt-2 mt-1 border-t border-slate-100">
+                        <!-- Primary Action: Unlock AI -->
+                        <button id="unlock-btn" onclick="callAgentAPI()" class="w-full group bg-black text-white px-3 py-2.5 rounded-md text-xs font-bold hover:bg-slate-800 transition-all flex items-center justify-between shadow-lg active:scale-[0.99]">
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm">✨</span>
+                                <div class="text-left">
+                                    <div id="action-title">试试 AI 联合专家会诊</div>
+                                    <div class="text-[9px] text-slate-400 font-normal">Mify AI 实时生成中...</div>
+                                </div>
+                            </div>
+                            <span class="text-slate-500 group-hover:text-white transition-colors">→</span>
+                        </button>
+                        
+                        <!-- Fallback: Copy Button (Hidden by default) -->
+                        <button id="copy-fallback-btn" onclick="copyAndRedirect()" class="hidden w-full group bg-slate-700 text-white px-3 py-2.5 rounded-md text-xs font-bold hover:bg-slate-600 transition-all flex items-center justify-between shadow-lg">
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm">📋</span>
+                                <div class="text-left">
+                                    <div>复制病历 & 前往复诊</div>
+                                    <div class="text-[9px] text-slate-300 font-normal">网络不佳？请手动复诊</div>
+                                </div>
+                            </div>
+                            <span class="text-slate-400">→</span>
+                        </button>
+
+                        <div id="secret-code" class="hidden"></div>
+                    </div>
+                    
+                    <!-- Simplified Voting -->
+                    <div class="text-center mt-2">
+                        <p class="text-[10px] text-slate-400 cursor-pointer hover:text-sky-600 transition-colors" onclick="voteFeedback()">
+                            <span id="vote-text" class="border-b border-dashed border-slate-300 pb-0.5">❤️ 觉得准？点此投我一票</span>
+                        </p>
+                    </div>
+
+                    <!-- QR Code (Bottom) -->
+                    <div id="qr-section" class="flex items-center justify-center gap-2 pt-1 border-t border-dashed border-slate-300 scale-90 origin-center">
+                        <div id="qrcode" class="bg-white p-0.5 rounded shadow-sm scale-75 origin-right"></div>
+                        <div class="text-left text-[10px] text-slate-400 leading-tight transform -translate-x-1">
+                            <p class="font-bold text-slate-600">长按识别</p>
+                            <p class="scale-90 origin-left">测测你的 2025</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            
+            <!-- Bottom Floating Actions -->
+            <div id="floating-actions" class="fixed bottom-6 left-4 right-4 flex gap-3 z-50 hidden opacity-0 transition-opacity duration-500">
+                 <!-- Main Button: Restart -->
+                 <button onclick="reset()" class="flex-1 bg-sky-600 hover:bg-sky-500 text-white text-sm font-bold py-3.5 rounded-full shadow-xl shadow-sky-900/40 flex items-center justify-center gap-2 transition-transform active:scale-95 border border-sky-400/20 backdrop-blur">
+                    <span>🔄</span>
+                    <span>测测别人</span>
+                </button>
+                
+                <!-- Secondary Button: Share -->
+                <button onclick="captureAndShare()" id="share-btn" class="flex-1 bg-slate-800/90 backdrop-blur hover:bg-slate-700 text-slate-200 text-xs font-bold py-3.5 rounded-full shadow-lg border border-slate-600/50 flex items-center justify-center gap-2 transition-transform active:scale-95">
+                    <span>📤</span> 
+                    <span>一键分享</span>
+                </button>
+            </div>
+            
+            <!-- Toast Notification -->
+            <div id="toast" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/80 text-white px-6 py-3 rounded-full text-sm font-bold backdrop-blur shadow-2xl transition-opacity duration-300 opacity-0 pointer-events-none z-[100] whitespace-nowrap">
+                ✅ 已复制到剪贴板，快去分享吧！
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Database Injection
+        const DATABASE = [{"term": "韧性", "desc": "本是一种描述在压力之下保持或恢复原状的某种特性，经济学中有个类似的概念鲁棒性（robustness）。这个韧性入选年度流行语核心还是在强调不受外界干扰的定力，或在不利的外界条件下，依旧能够坚持正确方向的能力。“XX 的韧性”这样的表述，频繁出现在官方的报道当中，以彰显实力和信心。", "tags": ["官方"]}, {"term": "数字游民", "desc": "灵活就业人员上网的一个全新身份。这群人可能在远古时代就存在了，那个时候混不上打猎和采集的队伍，成了混吃游民，后来在农业时代成了长短工游民，如今进入了 AI 时代，一切数字化的背景下，游民也变得新潮了起来。", "tags": ["官方"]}, {"term": "活人感", "desc": "一方面显出人们对网络上那些刻意包装的文案、照片、视频的厌倦；另一方面也源自于 AI 生成时代，人们对于那些虚假内容的反感。但更深层次的，就好像那个问题：介于生与死之间的状态是什么？答案是“工作”。人们在日复一日枯燥乏味的工作中，已经渐渐丧失了对生活的向往，工作了一天之后变成了一个带有浓浓的班味和死感的个体。", "tags": ["官方", "职场", "心理状态"]}, {"term": "XX 基础，XX 不基础", "desc": "虽然开始仅仅为穿搭视频赛道的一个套用公式，强调比如“上身基础、下身就不基础”的某种搭配思路。但逐渐被互联网消化为一个人们对生存现状自我消解的一个方式。有点像骑自行车去酒吧，该省省该花花，把自身的基础和不基础拉出来对比，比如表现虽然没赚多少钱，但花的多的一种无奈。", "tags": ["官方"]}, {"term": "从从容容、游刃有余，匆匆忙忙、连滚带爬", "desc": "这句话出来的时候，自带 BGM，按理说这不过是多年前“鬼畜”的翻新玩法，内容也渐渐从当时的本意，扩大为人们描述理想与现实差距的一个生动的表达。", "tags": ["官方"]}, {"term": "松弛感", "desc": "形容一种面对压力时从容不迫、张弛有度的心态和生活状态，是年轻人在快节奏生活中寻求平衡的体现。", "tags": ["官方", "心理状态"]}, {"term": "班味", "desc": "指职场人士身上常见的疲惫、无精打采的气息，反映了部分年轻人对职场生活的自嘲。", "tags": ["官方", "职场"]}, {"term": "去班味", "desc": "下班后通过各种方式消除 \"班味\" 的仪式性行为，如 Citywalk、寺庙游、宅家追剧等，小红书相关笔记暴涨 500%。", "tags": ["官方", "网络迷因"]}, {"term": "脆皮打工人", "desc": "体检指标全线飘红却不敢请假的新一代劳动者，身体像 \"脆皮\" 一碰就倒，却仍要硬扛工作。", "tags": ["官方", "职场"]}, {"term": "赛博功德 +1", "desc": "在网上随手点赞、转发善举，获得一种虚拟的 \"功德感\"。\"看到流浪动物救助视频，点赞 + 转发，感觉自己做了件好事 —— 虽然只是动动手指，但总比冷漠好\"。", "tags": ["官方"]}, {"term": "预制 ××", "desc": "原指预制菜，引申为被标准化、流程化、去个性化的人和事物，如 \"预制人生\"\" 预制工作 \"。", "tags": ["官方", "职场"]}, {"term": "宝宝文学", "desc": "职场人以 \"宝宝\" 自称，表面撒娇卖萌，实则暗藏辛酸的自嘲文体。", "tags": ["官方", "职场"]}, {"term": "邪修", "desc": "用 \"野路子\" 智慧对抗内卷，以离谱却高效的方式解决问题。", "tags": ["官方"]}, {"term": "丝瓜汤文学", "desc": "用平淡文字描述生活中微小美好，像 \"丝瓜汤\" 一样清淡却温暖人心。", "tags": ["官方", "心理状态"]}, {"term": "钝感艺术", "desc": "对无关紧要的事保持 \"钝感\"，不过度敏感，减少情绪内耗。", "tags": ["官方", "心理状态"]}, {"term": "反差型摆烂", "desc": "表面努力上进，内心早已 \"躺平\"，形成强烈反差。", "tags": ["官方"]}, {"term": "重启人生计划", "desc": "对现状不满，通过改变职业、城市或生活方式，重新定义人生方向。", "tags": ["官方"]}, {"term": "Bare Minimum Sunday", "desc": "周日拒绝一切社交和复杂活动，只做最基本的生活需求。", "tags": ["官方"]}, {"term": "养生型打工人", "desc": "在高强度工作中寻找健康生活方式，拒绝 \"脆皮打工人\" 状态。", "tags": ["官方", "职场"]}, {"term": "反差型健康", "desc": "表面 \"朋克养生\"（熬夜后吃保健品），实际对健康有自己的理解和节奏。", "tags": ["官方"]}, {"term": "拼好 X", "desc": "源于“拼好饭”，指年轻人将“拼单”逻辑扩展到学习、养宠等各领域，以更低成本、更高效率获取资源或服务的生活方式。在精打细算中追求生活更优解，注重实用主义与资源共享。", "tags": ["官方"]}, {"term": "养万物", "desc": "指年轻人热衷于“饲养”各种非常规物品，如精心打理芒果核制成“芒狗”，记录“牙膏掉落水池后的饲养日记”等。一种低成本、主打陪伴与解压的情感寄托方式，充满幽默与脑洞。", "tags": ["官方"]}, {"term": "痛金", "desc": "“痛文化”与黄金消费的结合，指带有动漫、游戏等二次元 IP 元素的黄金饰品，是情感寄托与保值需求的融合。追求“安全感”与“确定性”，愿意为情感价值和收藏价值支付溢价。", "tags": ["官方"]}, {"term": "姐系力量", "desc": "指当代女性理想人格的一种投射：清醒、自洽、不迎合，是众多人想要靠近，也想成为的模样。女性叙事转向更具内在张力的“自洽型叙事”，推崇独立自信的精神状态。", "tags": ["官方", "心理状态"]}, {"term": "菜市场旅行", "desc": "2025 年国庆爆火的旅行方式，不去景点人挤人，而是逛当地菜市场和早市。", "tags": ["官方"]}, {"term": "老款人类", "desc": "指生活方式踏实、不追求精致感，但为人靠谱、充满生命力的年轻人或小孩。是当代对一个人的最高褒奖之一。\n\n在过度包装和快节奏的时代，对反精致、踏实、靠谱的生活态度的集体向往。", "tags": ["官方"]}, {"term": "赛博未来爆改家", "desc": "年轻人不满足于标准化智能家居，亲手爆改住所，将爱好（如二次元、游戏）与高科技深度融合的硬核行为。追求极致的个性化和掌控感，希望科技真正服务于个人兴趣和生活方式。", "tags": ["官方"]}, {"term": "电子烧香", "desc": "在 B 站直播间敲数字木鱼、给电子神像刷礼物，用赛博玄学对抗现实焦虑。心理机制：\"明知无用，但仪式感带来短暂平静，这就够了\"。", "tags": ["官方"]}, {"term": "电子出家", "desc": "暂时退出社交媒体，过 \"数字苦行僧\" 生活。当代意义：对抗信息过载，\"不是我戒不掉手机，是我想夺回生活的主动权\"。", "tags": ["官方"]}, {"term": "反向消费", "desc": "摒弃盲目消费主义，追求 \"买对不买贵\" 的务实消费观。", "tags": ["官方"]}, {"term": "精神离职", "desc": "身体在岗，灵魂已跑路，对工作失去热情和动力。", "tags": ["官方", "职场"]}, {"term": "45° 人生", "desc": "躺不平又卷不动，卡在中间的尴尬状态。", "tags": ["官方"]}, {"term": "职场水豚", "desc": "借用 \"水豚\" 这一情绪稳定的动物形象，形容职场中情绪平和、不卑不亢的状态。", "tags": ["官方", "职场", "心理状态"]}, {"term": "delulu", "desc": "2025 年，剑桥词典将“delulu”列为年度热词之一，定义为“delusional”（妄想的）的缩写，指代一种明知不真实却选择相信的心理状态。这个词最早源于海外 K-pop 粉丝圈，用来调侃那些幻想与偶像恋爱的狂热粉丝。如今，它已从一个小众圈层的戏谑用语，演变为全球年轻人共通的情绪暗号。在中国互联网，尽管尚无确切记录表明“delulu”最早何时出现于微博、B 站或小红书，但其语义已被广泛接纳和本土化，成为描述“自我安慰式幻想”的常用表达。人们说“我 delulu 一下”，往往不是病态妄想，而是一种主动的情绪调节策略。", "tags": ["官方", "心理状态", "网络迷因"]}, {"term": "苦瓜", "desc": "表面说 \"苦瓜不苦\"，实则暗指 \"上班一点都不苦 —— 才怪！\" 的反向吐槽。", "tags": ["官方", "职场"]}, {"term": "浓人", "desc": "情感充沛、热情洋溢，工作中全情投入，能量值满格", "tags": ["官方", "职场"]}, {"term": "淡人", "desc": "情绪稳定、波澜不惊，工作中理性冷静，能量消耗慢", "tags": ["官方", "职场", "心理状态"]}, {"term": "Quiet thriving", "desc": "Quiet quitting (躺平) 的积极替代词，指暗自调节工作节奏，专注提升自己而非抱怨。职场智慧：从消极对抗转为积极自我提升，在不张扬中实现职业跃迁。", "tags": ["官方", "职场"]}, {"term": "工佛", "desc": "把上班当修行的职场心态，以佛系态度对待工作挑战，专注过程而非结果。心理价值：减轻得失心，在高强度工作中保持内心平静，实现 \"职场即道场\"。", "tags": ["官方", "职场", "心理状态"]}, {"term": "打工人 3.0", "desc": "数字时代新职场人，不仅具备专业技能，还拥有数字化思维和创新能力的新型职场人。", "tags": ["官方", "职场"]}, {"term": "降维打击", "desc": "用更高维度的能力解决低维度问题，展现绝对优势的职场表现。", "tags": ["官方", "职场"]}, {"term": "归零重启", "desc": "定期清空负面情绪和思维定势，像系统重启一样恢复活力。", "tags": ["官方", "心理状态"]}, {"term": "外五县穿搭", "desc": "职场穿搭的轻松调侃，指不盲目追求名牌、舒适得体的穿衣风格，体现了当代职场人对 \"面子工程\" 的理性看待，转而追求实用性和自我舒适感。", "tags": ["官方", "职场"]}, {"term": "元气满满", "desc": "起源于懂球帝 FC 足球队每周四友谊赛战报开场白，后泛化为网络流行语，形容精神饱满、活力充沛的状态。", "tags": ["官方", "心理状态"]}, {"term": "硬控", "desc": "**(来源：抖音/B站)**\n指某种事物非常有吸引力，让人无法挪开视线，不由自主地盯着看。“这个视频硬控我 30 秒”。形容注意力被完全剥夺，带有略微的强迫和无法自拔的意味。", "tags": ["民间", "网络迷因"]}, {"term": "偷感", "desc": "**(来源：小红书)**\n一种在社交场合或公共区域感到局促、不想被注意到的心理状态。明明光明正大，却总觉得自己像做贼一样小心翼翼。比如“偷感很重的去健身房”。是“社恐”的具象化细分。", "tags": ["民间", "心理状态", "网络迷因"]}, {"term": "淡淡综合症", "desc": "**(来源：小红书/微博)**\n“淡人”的进阶版。对所有事情都提不起劲，回消息通常是“收到、好的、ok”，精神状态极其稳定，稳定地发疯或稳定地颓废。主打一个“死猪不怕开水烫”的从容。", "tags": ["民间", "心理状态", "网络迷因"]}, {"term": "这是一个巨大的草台班子", "desc": "**(来源：全网)**\n指发现看似光鲜亮丽、严谨专业的各行各业（包括大厂、机构），内部其实充满了混乱、临时拼凑和不专业。打破了对权威的滤镜，成为年轻人缓解“冒充者综合症”的一剂良药。", "tags": ["民间"]}, {"term": "这一刻，子弹正中眉心", "desc": "**(来源：B站/文艺圈)**\n引用自《让子弹飞》或类似的宿命论描述。指多年前做出的某个不起眼的决定，在多年后的此刻突然产生了巨大的回响（通常是后悔或恍然大悟）。形容一种滞后的命运感。", "tags": ["民间", "网络迷因"]}, {"term": "尸斑淡了", "desc": "**(来源：B站/游戏圈)**\n原本形容人通过某种活动（如打游戏、追星、休息）恢复了活力，不再像“尸体”一样死气沉沉。是“回血”的更夸张、更具尸体感的表达。", "tags": ["民间", "心理状态", "网络迷因"]}, {"term": "既视感 (Déjà vu)", "desc": "**(来源：网络通用)**\n2025年被重新频繁提及。指对从未经历过的事情产生一种“曾经发生过”的熟悉感。常用于吐槽历史总是惊人的相似，或者生活像个巨大的循环。", "tags": ["民间"]}, {"term": "汗流浃背", "desc": "**(来源：B站/直播)**\n形容因为尴尬、紧张、心虚或者是被戳穿谎言时，极度焦虑的生理反应。现在泛指一切压力山大、无法应对的社死现场。“看到这个需求，我直接汗流浃背了”。", "tags": ["民间", "心理状态", "网络迷因"]}, {"term": "配享太庙", "desc": "**(来源：抖音/古装剧梗)**\n最高级别的赞赏。原指古代功臣死后供奉在太庙，现在形容某个东西（通常是美食、好用的神器、神仙队友）好用到值得最高规格的待遇。", "tags": ["民间", "心理状态", "网络迷因"]}, {"term": "爆改", "desc": "**(来源：抖音/小红书)**\n指对人、事、物进行极度夸张、反差巨大的改造。核心在于“反差感”，从土味到潮酷，从废墟到豪宅。", "tags": ["民间", "网络迷因"]}, {"term": "质疑 XX，理解 XX，成为 XX", "desc": "**(来源：全网)**\n一个人成长的三个阶段。通常用于对原本看不起或不理解的事物（如父母的审美、领导的决策、某种土味爱好），随着阅历增加，最终变成了自己曾经讨厌的样子，并乐在其中。", "tags": ["民间"]}, {"term": "窝囊废赛道", "desc": "**(来源：抖音)**\n形容一种性格温和、忍气吞声、甚至有点好欺负的男性形象（或自我调侃）。虽然“窝囊”，但因为情绪稳定、听话、顾家，反而意外地在婚恋市场或某种语境下受欢迎。", "tags": ["民间", "心理状态", "网络迷因"]}, {"term": "有一种不顾死活的美", "desc": "**(来源：小红书)**\n形容某种审美、行为或设计非常大胆、超前，完全不考虑实用性、逻辑性或旁人的眼光，但这种疯狂反而产生了一种独特的冲击力。", "tags": ["民间", "心理状态", "网络迷因"]}, {"term": "小甜水", "desc": "**(来源：生活方式)**\n泛指一切好喝、度数低、甜甜的酒精饮料，或者是生活中微小而确定的快乐。是“苦”生活中的一点点慰藉。", "tags": ["民间"]}, {"term": "抽象", "desc": "**(来源：B站)**\n万物皆可抽象。指行为逻辑难以理解、荒诞、怪异，或者为了搞笑而故意做出的反常行为。是当代互联网对“荒谬感”的最高级概括。", "tags": ["民间", "网络迷因"]}];
+
+        // Random Prompts
+        const RANDOM_PROMPTS = [
+            "感觉今年自己像个 NPC，一直在做重复任务...",
+            "精神状态很美丽，就是想发疯...",
+            "表面波澜不惊，内心已经在演甄嬛传了。",
+            "上班为了下班，下班为了睡觉，睡觉为了上班...",
+            "我是谁？我在哪？这需求是人提的吗？",
+            "今年最大的成就就是还活着。",
+            "间歇性踌躇满志，持续性混吃等死。"
+        ];
+
+        // Init: Random Placeholder
+        window.onload = function() {
+            const input = document.getElementById('user-input');
+            input.placeholder = RANDOM_PROMPTS[Math.floor(Math.random() * RANDOM_PROMPTS.length)];
+        };
+
+        function randomFill() {
+            const input = document.getElementById('user-input');
+            const text = RANDOM_PROMPTS[Math.floor(Math.random() * RANDOM_PROMPTS.length)];
+            
+            // Typing effect
+            input.value = "";
+            let i = 0;
+            const typeWriter = setInterval(() => {
+                if (i < text.length) {
+                    input.value += text.charAt(i);
+                    i++;
+                    updateCount();
+                } else {
+                    clearInterval(typeWriter);
+                }
+            }, 30);
+        }
+
+        function addTag(text) {
+            const input = document.getElementById('user-input');
+            if (input.value && !input.value.endsWith('\n')) {
+                input.value += "\n";
+            }
+            input.value += text;
+            updateCount();
+            
+            // Flash effect for feedback
+            input.classList.add('bg-sky-900/30');
+            setTimeout(() => input.classList.remove('bg-sky-900/30'), 200);
+        }
+
+        function updateCount() {
+            const input = document.getElementById('user-input');
+            const countSpan = document.getElementById('char-count');
+            countSpan.innerText = input.value.length;
+        }
+
+        // Logic
+        function diagnose() {
+            const input = document.getElementById('user-input').value;
+            if(!input.trim()) { alert("请先输入你的年度感悟！"); return; }
+
+            // UI Transitions
+            document.getElementById('input-section').classList.add('hidden');
+            document.querySelector('.text-center.mb-6').classList.add('hidden'); // Hide Logo
+            document.getElementById('scanning').classList.remove('hidden');
+
+            // Simulate Scanning (Faster)
+            setTimeout(() => {
+                const result = findMatch(input);
+                showResult(result);
+            }, 1000);
+        }
+
+        function findMatch(text) {
+            let bestMatch = null;
+            let maxScore = 0;
+            DATABASE.forEach(item => {
+                let score = 0;
+                if (text.includes(item.term)) score += 10;
+                const commonChars = item.desc.split('').filter(char => text.includes(char)).length;
+                score += commonChars * 0.1;
+                score += Math.random() * 2;
+                if (score > maxScore) {
+                    maxScore = score;
+                    bestMatch = item;
+                }
+            });
+            return bestMatch || DATABASE[Math.floor(Math.random() * DATABASE.length)];
+        }
+
+        function showResult(item) {
+            document.getElementById('scanning').classList.add('hidden');
+            document.getElementById('result-section').classList.remove('hidden');
+
+            // Generate Pseudo-Auto-Increment ID
+            const startEpoch = new Date('2025-01-01').getTime();
+            const now = Date.now();
+            const diffMinutes = Math.floor((now - startEpoch) / 60000); 
+            const pseudoId = 1000 + diffMinutes + Math.floor(Math.random() * 100);
+            const formattedId = `NO.2025-XIAOMI-${pseudoId}`;
+            document.getElementById('receipt-id').innerText = formattedId;
+
+            document.getElementById('result-term').innerText = item.term;
+            
+            let cleanDesc = item.desc.replace(/\*\*\(来源.*?\)\*\*/, '').trim();
+            if(cleanDesc.length > 80) cleanDesc = cleanDesc.substring(0, 80) + "...";
+            document.getElementById('result-desc').innerText = cleanDesc;
+
+            const adviceTerm = DATABASE[Math.floor(Math.random() * DATABASE.length)];
+            document.getElementById('result-advice').innerText = `建议尝试：${adviceTerm.term}。`;
+
+            // Render Tags (Solid Style)
+            const tagContainer = document.getElementById('result-tags');
+            tagContainer.innerHTML = '';
+            item.tags.forEach(tag => {
+                const span = document.createElement('span');
+                span.className = 'text-[9px] uppercase font-bold tracking-wider bg-slate-900 text-white px-1.5 py-0.5 rounded-sm';
+                span.innerText = tag;
+                tagContainer.appendChild(span);
+            });
+
+            // Generate Referral Slip
+            const input = document.getElementById('user-input').value;
+            const referralText = `【Mify复诊申请单】\n📅 初诊结果：${item.term}\n🗣️ 患者主诉：${input.substring(0, 50)}${input.length > 50 ? '...' : ''}\n(请发送此单，解锁3000字深度心理侧写)`;
+            document.getElementById('secret-code').dataset.fullText = referralText;
+
+            // Generate QR Code
+            setTimeout(() => {
+                const qrContainer = document.getElementById("qrcode");
+                qrContainer.innerHTML = ""; 
+                new QRCode(qrContainer, {
+                    text: "https://s.mi.cn/WL3u9hWB",
+                    width: 48,
+                    height: 48,
+                    colorDark : "#334155",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.L
+                });
+            }, 100);
+
+            // Show Floating Actions with Delay
+            setTimeout(() => {
+                const fab = document.getElementById('floating-actions');
+                fab.classList.remove('hidden');
+                // Small delay to allow display:block to apply before opacity transition
+                requestAnimationFrame(() => {
+                    fab.classList.remove('opacity-0');
+                });
+            }, 600);
+        }
+
+        async function callAgentAPI() {
+            const btn = document.getElementById('unlock-btn');
+            const aiLoading = document.getElementById('ai-loading');
+            const aiContent = document.getElementById('ai-content');
+            const input = document.getElementById('user-input').value;
+            const term = document.getElementById('result-term').innerText;
+
+            // UI State: Loading
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            aiLoading.classList.remove('hidden');
+            aiContent.innerHTML = "<span class='cursor-blink'>AI 正在连接赛博空间...</span>";
+
+            // Fallback Timer (If API is slow/dead) - kept as safety net
+            const fallbackTimer = setTimeout(() => {
+                if (aiContent.innerText.includes("AI 正在连接赛博空间")) {
+                     document.getElementById('copy-fallback-btn').classList.remove('hidden');
+                     aiContent.innerHTML += "<br><br><span class='text-red-500'>⚠️ 信号微弱，建议手动复诊。</span>";
+                }
+            }, 15000); // Increased timeout for real API
+
+            try {
+                const response = await fetch('https://service.mify.mioffice.cn/api/v1/chat-messages', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer app-dDKtAAZmLbtMN5St1px7SCbw',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        "inputs": {},
+                        "query": `${term} - ${input}`,
+                        "response_mode": "streaming",
+                        "conversation_id": "",
+                        "user": "system",
+                        "files": []
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                clearTimeout(fallbackTimer);
+                aiContent.innerHTML = ""; // Clear loading message
+                aiContent.classList.add('cursor-blink');
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value, { stream: true });
+                    buffer += chunk;
+                    
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop(); // Keep the last incomplete line in buffer
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const dataStr = line.slice(6);
+                                if (dataStr.trim() === '[DONE]') continue; // Skip [DONE] message if any
+                                
+                                const data = JSON.parse(dataStr);
+                                if (data.event === 'agent_message' && data.answer) {
+                                    aiContent.textContent += data.answer;
+                                    aiContent.scrollTop = aiContent.scrollHeight;
+                                }
+                            } catch (e) {
+                                console.warn('Error parsing stream data:', e);
+                            }
+                        }
+                    }
+                }
+
+                aiContent.classList.remove('cursor-blink');
+                btn.classList.add('hidden'); // Hide button after success
+
+            } catch (error) {
+                console.error(error);
+                clearTimeout(fallbackTimer);
+                aiContent.innerHTML = "<span class='text-red-500'>连接中断。请使用下方按钮手动复诊。</span>";
+                document.getElementById('copy-fallback-btn').classList.remove('hidden');
+                btn.classList.add('hidden');
+            } finally {
+                aiLoading.classList.add('hidden');
+            }
+        }
+
+        function copyAndRedirect() {
+            const code = document.getElementById('secret-code').dataset.fullText;
+            if(!code) return;
+            
+            const updateUI = () => {
+                const btn = document.getElementById('action-btn');
+                const title = document.getElementById('action-title');
+                
+                btn.className = "w-full bg-emerald-600 text-white px-4 py-3 rounded-md text-xs font-bold transition-all flex items-center justify-between shadow-lg";
+                title.innerText = "复制成功！跳转Mify...";
+                document.getElementById('action-title').nextElementSibling.innerText = "请在对话框粘贴病历单";
+            };
+
+            navigator.clipboard.writeText(code).then(() => {
+                updateUI();
+                setTimeout(() => {
+                    window.open("https://mify.xiaomi.com", "_blank"); 
+                }, 800);
+            }).catch(err => {
+                console.error("Clipboard failed", err);
+                updateUI();
+                setTimeout(() => {
+                    window.open("https://mify.xiaomi.com", "_blank"); 
+                }, 800);
+            });
+        }
+
+        async function captureAndShare() {
+            const btn = document.getElementById('share-btn');
+            const originalText = btn.innerHTML;
+            
+            btn.innerHTML = "<span>⌛</span> <span>生成中...</span>";
+            
+            try {
+                // IMPORTANT: Hide floating buttons before capture
+                const floatingBtns = document.querySelector('.fixed.bottom-6');
+                floatingBtns.style.display = 'none';
+
+                const card = document.querySelector('.receipt-card');
+                
+                const canvas = await html2canvas(card, {
+                    scale: 3, 
+                    useCORS: true,
+                    backgroundColor: null,
+                    logging: false
+                });
+
+                // Restore buttons
+                floatingBtns.style.display = 'flex';
+                btn.innerHTML = originalText; 
+
+                canvas.toBlob(async (blob) => {
+                    try {
+                        const item = new ClipboardItem({ "image/png": blob });
+                        await navigator.clipboard.write([item]);
+                        
+                        // Show Toast
+                        const toast = document.getElementById('toast');
+                        toast.classList.remove('opacity-0');
+                        setTimeout(() => {
+                            toast.classList.add('opacity-0');
+                        }, 2500);
+                        
+                    } catch (err) {
+                        alert("浏览器不支持直接复制图片，请截屏保存");
+                    }
+                });
+
+            } catch (err) {
+                console.error('Capture failed:', err);
+                btn.innerHTML = "❌";
+                setTimeout(() => btn.innerHTML = originalText, 2000);
+            }
+        }
+
+        function voteFeedback() {
+            const text = document.getElementById('vote-text');
+            text.innerHTML = "<span>❤️ 感谢支持！</span>";
+            text.classList.add("text-rose-500");
+            
+            setTimeout(() => {
+                window.open("https://activity.tech.xiaomi.com/activities/61/index#/go-vote?teamId=4869&eventId=62&configId=40&voteId=32&active=RAG%E5%88%9B%E6%83%B3%E8%B5%9B", "_blank");
+            }, 500);
+        }
+
+        function reset() {
+            document.getElementById('result-section').classList.add('hidden');
+            // Hide Floating Actions immediately
+            const fab = document.getElementById('floating-actions');
+            fab.classList.add('hidden', 'opacity-0');
+
+            document.getElementById('input-section').classList.remove('hidden');
+            document.querySelector('.text-center.mb-6').classList.remove('hidden'); // Show Logo
+            document.getElementById('user-input').value = '';
+            updateCount();
+
+            // Reset Vote Text
+             const voteText = document.getElementById('vote-text');
+             voteText.innerHTML = "❤️ 觉得准？点此投我一票";
+             voteText.classList.remove("text-rose-500");
+
+            // Reset Share Button
+            const shareBtn = document.getElementById('share-btn');
+            shareBtn.innerHTML = "<span>📤</span> <span>一键分享</span>";
+
+            // Reset AI Deep Dive Section
+            const aiContent = document.getElementById('ai-content');
+            aiContent.innerHTML = '<span class="text-slate-400 italic">点击下方按钮解锁深度解读...</span>';
+            aiContent.classList.remove('cursor-blink');
+            document.getElementById('ai-loading').classList.add('hidden');
+            
+            // Reset Unlock Button
+            const unlockBtn = document.getElementById('unlock-btn');
+            unlockBtn.classList.remove('hidden', 'opacity-50', 'cursor-not-allowed');
+            unlockBtn.disabled = false;
+            document.getElementById('copy-fallback-btn').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
